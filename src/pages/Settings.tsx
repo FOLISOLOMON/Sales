@@ -161,7 +161,7 @@ export function SettingsPage() {
       </Button>
 
       <p className="text-center text-xs text-muted-foreground">
-        Veloura Manager v1.0 · Made for perfume businesses
+        Remedy Manager v1.0 · Made for perfume businesses
       </p>
     </div>
   )
