@@ -16,54 +16,90 @@
 // ─── CONFIGURATION ───────────────────────────────────────────
 // Replace this empty string with your Google Apps Script Web App URL
 // Example: "https://script.google.com/macros/s/AKfycb.../exec"
-const API_URL = "https://script.google.com/macros/s/AKfycbwN-KlEJBeHIMmf-LKrKImHI1NOG_jmesXNUjwY_LxL69v5nPm4jIBUyUoWXJ_IDwoN/exec"
+const API_URL = "https://script.google.com/macros/s/AKfycbzcGCe10onvvg3ee_9o_pMFbVbOZCcK4sKyVmv6GGJYNT-y-ID1-gtgSHe7jZEN8U3V/exec"
 
-// ─── HELPER: API CALL ─────────────────────────────────────────
+
+// ─── HELPER: UNIVERSAL API CALL (POST + URLSearchParams to avoid CORS) ─
+// Using URLSearchParams sends as application/x-www-form-urlencoded
+// This is a "simple request" → NO CORS preflight → params survive GAS redirect
 async function apiCall(action, params = {}) {
+  console.log(" API CALL:", action, params);
+
   if (!API_URL) {
-    return null // triggers mock data fallback
+    console.warn("⚠️ No API URL - using mock data");
+    return null;
   }
 
-  const url = new URL(API_URL)
-  url.searchParams.set("action", action)
+  // Build body with URLSearchParams (NOT FormData - that triggers preflight)
+  const body = new URLSearchParams();
+  body.append("action", action);
   for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, String(value))
+    body.append(key, String(value));
   }
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    redirect: "follow",
-  })
+  console.log(" Sending POST to:", API_URL);
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`)
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: body,
+      redirect: "follow",
+    });
+
+    console.log("📥 Response Status:", response.status);
+
+    const text = await response.text();
+    console.log("📦 Raw Response:", text);
+
+    const data = JSON.parse(text);
+    console.log("✅ JSON Data:", data);
+
+    return data;
+
+  } catch (error) {
+    console.error("❌ API ERROR:", error);
+    return null;  // Return null so mock data kicks in
   }
-
-  return response.json()
 }
 
+
+// ─── HELPER: POST API CALL (same as apiCall, just aliased) ───────────────
 async function apiPost(action, data = {}) {
+  console.log("📡 POST API CALL:", action, data);
+
   if (!API_URL) {
-    return null // triggers mock data fallback
+    console.warn("⚠️ No API URL - using mock data");
+    return null;
   }
 
-  const formData = new FormData()
-  formData.append("action", action)
+  // Use URLSearchParams (NOT FormData - avoids CORS preflight)
+  const body = new URLSearchParams();
+  body.append("action", action);
   for (const [key, value] of Object.entries(data)) {
-    formData.append(key, String(value))
+    body.append(key, String(value));
   }
 
-  const response = await fetch(API_URL, {
-    method: "POST",
-    body: formData,
-    redirect: "follow",
-  })
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: body,
+      redirect: "follow",
+    });
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`)
+    console.log("📥 Response Status:", response.status);
+
+    const text = await response.text();
+    console.log("📦 Raw Response:", text);
+
+    const result = JSON.parse(text);
+    console.log("✅ POST Result:", result);
+
+    return result;
+
+  } catch (error) {
+    console.error("❌ POST API ERROR:", error);
+    return null;  // Return null so mock data kicks in
   }
-
-  return response.json()
 }
 
 // ─── MOCK DATA ───────────────────────────────────────────────
@@ -188,7 +224,7 @@ export async function addSale(sale) {
   return result
 }
 
-// ─── EXPENSES API ─────────────────────────────────────────────
+// ─── EXPENSES API ────────────────────────────────────────────
 export async function getExpenses() {
   const result = await apiCall("getExpenses")
   return result ?? mockExpenses
@@ -258,7 +294,7 @@ export async function deleteCustomer(customerId) {
   return result
 }
 
-// ─── SETTINGS API ─────────────────────────────────────────────
+// ─── SETTINGS API ────────────────────────────────────────────
 export async function getSettings() {
   const result = await apiCall("getSettings")
   return result ?? mockSettings
