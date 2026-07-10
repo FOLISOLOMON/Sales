@@ -50,6 +50,10 @@ async function apiCall(action, params = {}) {
 
   const url = new URL(API_URL)
   url.searchParams.set("action", action)
+  
+  // Add a cache-buster to prevent mobile browsers from caching failed CORS requests
+  url.searchParams.set("_", Date.now()) 
+  
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, String(value))
   }
@@ -58,6 +62,7 @@ async function apiCall(action, params = {}) {
     const response = await fetch(url.toString(), {
       method: "GET",
       redirect: "follow",
+      credentials: "omit", // <--- CRITICAL FIX: Prevents mobile browsers from blocking the Google redirect
     })
     return parseJsonSafely(response, action)
   } catch (e) {
@@ -65,6 +70,7 @@ async function apiCall(action, params = {}) {
     return null
   }
 }
+
 
 async function apiPost(action, data = {}) {
   if (!API_URL) return null
@@ -80,6 +86,7 @@ async function apiPost(action, data = {}) {
       method: "POST",
       body: formData,
       redirect: "follow",
+      credentials: "omit", // <--- CRITICAL FIX: Same fix for POST requests
     })
     return parseJsonSafely(response, action)
   } catch (e) {
