@@ -16,89 +16,95 @@
 // ─── CONFIGURATION ───────────────────────────────────────────
 // Replace this empty string with your Google Apps Script Web App URL
 // Example: "https://script.google.com/macros/s/AKfycb.../exec"
-const API_URL = "https://script.google.com/macros/s/AKfycbzcGCe10onvvg3ee_9o_pMFbVbOZCcK4sKyVmv6GGJYNT-y-ID1-gtgSHe7jZEN8U3V/exec"
+const API_URL = "https://script.google.com/macros/s/AKfycbwN-KlEJBeHIMmf-LKrKImHI1NOG_jmesXNUjwY_LxL69v5nPm4jIBUyUoWXJ_IDwoN/exec"
 
+// ─── HELPER: PARSE RESPONSE SAFELY ───────────────────────────
+// Google Apps Script can return HTML error pages instead of JSON.
+// This function detects that and returns null so callers fall
+// back to mock data instead of crashing.
+async function parseJsonSafely(response, action) {
+  const contentType = response.headers.get("content-type") || ""
 
-// ─── HELPER: UNIVERSAL API CALL (POST + URLSearchParams to avoid CORS) ─
-// Using URLSearchParams sends as application/x-www-form-urlencoded
-// This is a "simple request" → NO CORS preflight → params survive GAS redirect
-async function apiCall(action, params = {}) {
-  console.log(" API CALL:", action, params);
-
-  if (!API_URL) {
-    console.warn("⚠️ No API URL - using mock data");
-    return null;
+  if (!response.ok) {
+    const bodyText = await response.text().catch(() => "")
+    console.error(
+      `[Veloura API] "${action}" failed with HTTP ${response.status} ${response.statusText}`,
+      bodyText.substring(0, 300)
+    )
+    return null
   }
 
-  // Build body with URLSearchParams (NOT FormData - that triggers preflight)
-  const body = new URLSearchParams();
-  body.append("action", action);
-  for (const [key, value] of Object.entries(params)) {
-    body.append(key, String(value));
+  // Response is HTML (Google error page or auth redirect), not JSON
+  if (contentType.includes("text/html")) {
+    const bodyText = await response.text().catch(() => "")
+    // Extract the error message from Google's HTML error page
+    const errorMatch = bodyText.match(/<div[^>]*>(.*?)<\/div>/g)
+    const errorHtml = errorMatch?.[errorMatch.length - 1] || bodyText.substring(0, 300)
+    console.error(
+      `[Veloura API] "${action}" returned HTML instead of JSON — your Google Apps Script has an error.`,
+      errorHtml.replace(/<[^>]*>/g, "").trim()
+    )
+    return null
   }
 
-  console.log(" Sending POST to:", API_URL);
-
+  // Try to parse as JSON
+  const text = await response.text()
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: body,
-      redirect: "follow",
-    });
-
-    console.log("📥 Response Status:", response.status);
-
-    const text = await response.text();
-    console.log("📦 Raw Response:", text);
-
-    const data = JSON.parse(text);
-    console.log("✅ JSON Data:", data);
-
-    return data;
-
-  } catch (error) {
-    console.error("❌ API ERROR:", error);
-    return null;  // Return null so mock data kicks in
+    return JSON.parse(text)
+  } catch (e) {
+    console.error(
+      `[Veloura API] "${action}" returned non-JSON response that could not be parsed.`,
+      text.substring(0, 300)
+    )
+    return null
   }
 }
 
-
-// ─── HELPER: POST API CALL (same as apiCall, just aliased) ───────────────
-async function apiPost(action, data = {}) {
-  console.log("📡 POST API CALL:", action, data);
-
+// ─── HELPER: API CALL ─────────────────────────────────────────
+async function apiCall(action, params = {}) {
   if (!API_URL) {
-    console.warn("⚠️ No API URL - using mock data");
-    return null;
+    return null // triggers mock data fallback
   }
 
-  // Use URLSearchParams (NOT FormData - avoids CORS preflight)
-  const body = new URLSearchParams();
-  body.append("action", action);
+  const url = new URL(API_URL)
+  url.searchParams.set("action", action)
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, String(value))
+  }
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      redirect: "follow",
+    })
+    return parseJsonSafely(response, action)
+  } catch (e) {
+    console.error(`[Veloura API] Network error for "${action}":`, e.message)
+    return null
+  }
+}
+
+async function apiPost(action, data = {}) {
+  if (!API_URL) {
+    return null // triggers mock data fallback
+  }
+
+  const formData = new FormData()
+  formData.append("action", action)
   for (const [key, value] of Object.entries(data)) {
-    body.append(key, String(value));
+    formData.append(key, String(value))
   }
 
   try {
     const response = await fetch(API_URL, {
       method: "POST",
-      body: body,
+      body: formData,
       redirect: "follow",
-    });
-
-    console.log("📥 Response Status:", response.status);
-
-    const text = await response.text();
-    console.log("📦 Raw Response:", text);
-
-    const result = JSON.parse(text);
-    console.log("✅ POST Result:", result);
-
-    return result;
-
-  } catch (error) {
-    console.error("❌ POST API ERROR:", error);
-    return null;  // Return null so mock data kicks in
+    })
+    return parseJsonSafely(response, action)
+  } catch (e) {
+    console.error(`[Veloura API] Network error for "${action}":`, e.message)
+    return null
   }
 }
 
@@ -224,7 +230,7 @@ export async function addSale(sale) {
   return result
 }
 
-// ─── EXPENSES API ────────────────────────────────────────────
+// ─── EXPENSES API ─────────────────────────────────────────────
 export async function getExpenses() {
   const result = await apiCall("getExpenses")
   return result ?? mockExpenses
@@ -294,7 +300,7 @@ export async function deleteCustomer(customerId) {
   return result
 }
 
-// ─── SETTINGS API ────────────────────────────────────────────
+// ─── SETTINGS API ─────────────────────────────────────────────
 export async function getSettings() {
   const result = await apiCall("getSettings")
   return result ?? mockSettings
