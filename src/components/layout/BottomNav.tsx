@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { NavLink } from "react-router-dom"
 import {
   LayoutDashboard,
@@ -67,6 +67,32 @@ function NavButton({ item }: { item: NavItem }) {
 
 export function BottomNav() {
   const [open, setOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  useEffect(() => {
+    const syncModalState = () => {
+      const hasOpenModal = document.body.querySelector('[data-state="open"], [role="dialog"]') !== null
+      setIsModalOpen(hasOpenModal)
+    }
+
+    syncModalState()
+
+    const observer = new MutationObserver(syncModalState)
+    observer.observe(document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ["data-state", "aria-hidden", "style"],
+    })
+
+    window.addEventListener("resize", syncModalState)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", syncModalState)
+    }
+  }, [])
+
+  const shouldHideFab = open || isModalOpen
 
   return (
     <>
@@ -84,7 +110,7 @@ export function BottomNav() {
         aria-label="Open more navigation"
         className={cn(
           "fixed bottom-[5.4rem] right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_30px_rgba(0,0,0,0.18)] transition-all duration-300 hover:scale-105",
-          open && "translate-x-[160%] rotate-[-90deg] opacity-0"
+          shouldHideFab && "pointer-events-none translate-x-[160%] rotate-[-90deg] opacity-0"
         )}
       >
         <MoreHorizontal className="size-6" strokeWidth={2.2} />

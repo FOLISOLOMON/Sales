@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, Pencil, Trash2, Users, Phone, MapPin, ShoppingBag } from "lucide-react"
+import { Plus, Pencil, Trash2, Users, Phone, MapPin, ShoppingBag, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import {
   Card,
@@ -46,6 +46,7 @@ export function Customers() {
   const deleteCustomerMutation = useDeleteCustomer()
 
   const loading = customersLoading || salesLoading || settingsLoading
+  const isSaving = addCustomerMutation.isPending || updateCustomerMutation.isPending
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -262,8 +263,17 @@ export function Customers() {
               />
             </div>
             <SheetFooter>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">
-                {editing ? "Save Changes" : "Add Customer"}
+              <Button type="submit" disabled={isSaving} className="w-full bg-primary text-primary-foreground">
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    {editing ? "Saving..." : "Adding..."}
+                  </span>
+                ) : editing ? (
+                  "Save Changes"
+                ) : (
+                  "Add Customer"
+                )}
               </Button>
             </SheetFooter>
           </form>

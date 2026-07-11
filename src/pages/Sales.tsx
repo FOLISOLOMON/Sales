@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, ShoppingCart, Search } from "lucide-react"
+import { Plus, ShoppingCart, Search, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import {
   Card,
@@ -44,6 +44,7 @@ export function Sales() {
   const addSaleMutation = useAddSale()
 
   const loading = salesLoading || productsLoading || customersLoading || settingsLoading
+  const isSaving = addSaleMutation.isPending
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -239,8 +240,15 @@ export function Sales() {
             )}
 
             <SheetFooter>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">
-                Complete Sale
+              <Button type="submit" disabled={isSaving} className="w-full bg-primary text-primary-foreground">
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    Processing...
+                  </span>
+                ) : (
+                  "Complete Sale"
+                )}
               </Button>
             </SheetFooter>
           </form>

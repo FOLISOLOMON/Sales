@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, Receipt, Trash2, Wallet, TrendingDown } from "lucide-react"
+import { Plus, Receipt, Trash2, Wallet, TrendingDown, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import {
   Card,
@@ -47,6 +47,7 @@ export function Expenses() {
   const deleteExpenseMutation = useDeleteExpense()
 
   const loading = expensesLoading || salesLoading || settingsLoading
+  const isSaving = addExpenseMutation.isPending
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -190,8 +191,15 @@ export function Expenses() {
               <Input id="exp-date" type="date" value={form.Expense_Date} onChange={(e) => setForm({ ...form, Expense_Date: e.target.value })} />
             </div>
             <SheetFooter>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">
-                Add Expense
+              <Button type="submit" disabled={isSaving} className="w-full bg-primary text-primary-foreground">
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    Saving...
+                  </span>
+                ) : (
+                  "Add Expense"
+                )}
               </Button>
             </SheetFooter>
           </form>

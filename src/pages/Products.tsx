@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Search, Plus, Pencil, Trash2, Package, AlertTriangle } from "lucide-react"
+import { Search, Plus, Pencil, Trash2, Package, AlertTriangle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import {
   Card,
@@ -45,6 +45,7 @@ export function Products() {
   const deleteProductMutation = useDeleteProduct()
 
   const loading = productsLoading || settingsLoading
+  const isSaving = addProductMutation.isPending || updateProductMutation.isPending
 
   const [search, setSearch] = useState("")
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -251,8 +252,17 @@ export function Products() {
               </div>
             </div>
             <SheetFooter>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground">
-                {editing ? "Save Changes" : "Add Product"}
+              <Button type="submit" disabled={isSaving} className="w-full bg-primary text-primary-foreground">
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    {editing ? "Saving..." : "Adding..."}
+                  </span>
+                ) : editing ? (
+                  "Save Changes"
+                ) : (
+                  "Add Product"
+                )}
               </Button>
             </SheetFooter>
           </form>
