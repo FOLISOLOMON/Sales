@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useState } from "react"
-=======
-import { useEffect, useState, useCallback } from "react"
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { Plus, Pencil, Trash2, Users, Phone, MapPin, ShoppingBag } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -13,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import {
   Sheet,
   SheetContent,
@@ -33,7 +28,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { PageHeader } from "@/components/layout/PageHeader"
 import {
-<<<<<<< HEAD
   useCustomers,
   useSales,
   useSettings,
@@ -53,22 +47,6 @@ export function Customers() {
 
   const loading = customersLoading || salesLoading || settingsLoading
 
-=======
-  getCustomers,
-  getSales,
-  addCustomer,
-  updateCustomer,
-  deleteCustomer,
-  getSettings,
-} from "@/services/api"
-import { formatCurrency, formatShortDate, getTodayString, getInitials } from "@/utils/formatters"
-
-export function Customers() {
-  const [customers, setCustomers] = useState([])
-  const [sales, setSales] = useState([])
-  const [settings, setSettings] = useState({ Currency: "$" })
-  const [loading, setLoading] = useState(true)
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleteId, setDeleteId] = useState(null)
@@ -81,22 +59,6 @@ export function Customers() {
     Date_Added: getTodayString(),
   })
 
-<<<<<<< HEAD
-=======
-  const load = useCallback(async () => {
-    setLoading(true)
-    const [c, s, st] = await Promise.all([getCustomers(), getSales(), getSettings()])
-    setCustomers(c)
-    setSales(s)
-    setSettings(st)
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const currency = settings.Currency || "$"
 
   function getCustomerPurchases(customerId) {
@@ -104,7 +66,7 @@ export function Customers() {
   }
 
   function getCustomerTotal(customerId) {
-    return getCustomerPurchases(customerId).reduce((sum, s) => sum + s.Total_Amount, 0)
+    return getCustomerPurchases(customerId).reduce((sum, s) => sum + (Number(s.Total_Amount) || 0), 0)
   }
 
   function openAdd() {
@@ -137,7 +99,6 @@ export function Customers() {
     }
 
     if (editing) {
-<<<<<<< HEAD
       await updateCustomerMutation.mutateAsync({ customerId: editing.Customer_ID, updates: form })
       toast.success("Customer updated")
     } else {
@@ -146,31 +107,14 @@ export function Customers() {
     }
     setSheetOpen(false)
     refetchCustomers()
-=======
-      await updateCustomer(editing.Customer_ID, form)
-      toast.success("Customer updated")
-    } else {
-      await addCustomer(form)
-      toast.success("Customer added")
-    }
-    setSheetOpen(false)
-    load()
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   async function handleDelete() {
     if (!deleteId) return
-<<<<<<< HEAD
     await deleteCustomerMutation.mutateAsync(deleteId)
     toast.success("Customer deleted")
     setDeleteId(null)
     refetchCustomers()
-=======
-    await deleteCustomer(deleteId)
-    toast.success("Customer deleted")
-    setDeleteId(null)
-    load()
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   return (
@@ -181,7 +125,6 @@ export function Customers() {
         </Button>
       </PageHeader>
 
-      {/* Customer list */}
       <div className="space-y-2.5">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -229,7 +172,6 @@ export function Customers() {
                     </div>
                   </button>
 
-                  {/* Expanded: purchase history */}
                   {isExpanded && (
                     <div className="mt-3 space-y-2 border-t border-border/50 pt-3">
                       {customer.Location && (
@@ -263,11 +205,7 @@ export function Customers() {
                         ))
                       )}
                       <div className="flex gap-1.5 pt-1">
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => openEdit(customer)}
-                        >
+                        <Button size="xs" variant="ghost" onClick={() => openEdit(customer)}>
                           <Pencil className="size-3" />
                           Edit
                         </Button>
@@ -290,7 +228,6 @@ export function Customers() {
         )}
       </div>
 
-      {/* Add/Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
           <SheetHeader>
@@ -333,7 +270,6 @@ export function Customers() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

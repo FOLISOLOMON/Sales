@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useState, useCallback } from "react"
-=======
-import { useEffect, useState, useCallback } from "react"
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
+import { useState } from "react"
 import { Plus, ShoppingCart, Search } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -31,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PageHeader } from "@/components/layout/PageHeader"
-<<<<<<< HEAD
 import {
   useSales,
   useProducts,
@@ -50,17 +45,6 @@ export function Sales() {
 
   const loading = salesLoading || productsLoading || customersLoading || settingsLoading
 
-=======
-import { getSales, getProducts, getCustomers, addSale, getSettings } from "@/services/api"
-import { formatCurrency, formatShortDate, getTodayString } from "@/utils/formatters"
-
-export function Sales() {
-  const [sales, setSales] = useState([])
-  const [products, setProducts] = useState([])
-  const [customers, setCustomers] = useState([])
-  const [settings, setSettings] = useState({ Currency: "$" })
-  const [loading, setLoading] = useState(true)
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const [sheetOpen, setSheetOpen] = useState(false)
   const [search, setSearch] = useState("")
 
@@ -68,50 +52,22 @@ export function Sales() {
     Product_ID: "",
     Quantity_Sold: "1",
     Payment_Method: "Cash",
-<<<<<<< HEAD
     Customer_ID: "none",
   })
 
-=======
-    Customer_ID: "",
-  })
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    const [s, p, c, st] = await Promise.all([
-      getSales(),
-      getProducts(),
-      getCustomers(),
-      getSettings(),
-    ])
-    setSales(s)
-    setProducts(p)
-    setCustomers(c)
-    setSettings(st)
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const currency = settings.Currency || "$"
 
   const selectedProduct = products.find((p) => p.Product_ID === form.Product_ID)
   const quantity = parseInt(form.Quantity_Sold, 10) || 0
-  const sellingPrice = selectedProduct?.Selling_Price || 0
-  const costPrice = selectedProduct?.Cost_Price || 0
+  const sellingPrice = Number(selectedProduct?.Selling_Price || 0)
+  const costPrice = Number(selectedProduct?.Cost_Price || 0)
   const totalAmount = quantity * sellingPrice
   const costTotal = quantity * costPrice
   const profit = totalAmount - costTotal
 
   const filteredSales = sales.filter((s) => {
     const q = search.toLowerCase()
-    return (
-      s.Product_Name?.toLowerCase().includes(q) ||
-      s.Sale_ID?.toLowerCase().includes(q)
-    )
+    return s.Product_Name?.toLowerCase().includes(q) || s.Sale_ID?.toLowerCase().includes(q)
   })
 
   function openAdd() {
@@ -119,7 +75,7 @@ export function Sales() {
       Product_ID: "",
       Quantity_Sold: "1",
       Payment_Method: "Cash",
-      Customer_ID: "",
+      Customer_ID: "none",
     })
     setSheetOpen(true)
   }
@@ -134,7 +90,7 @@ export function Sales() {
       toast.error("Quantity must be at least 1")
       return
     }
-    if (selectedProduct && quantity > selectedProduct.Stock_Quantity) {
+    if (selectedProduct && quantity > Number(selectedProduct.Stock_Quantity || 0)) {
       toast.error(`Only ${selectedProduct.Stock_Quantity} in stock`)
       return
     }
@@ -149,7 +105,6 @@ export function Sales() {
       Profit: profit,
       Sale_Date: getTodayString(),
       Payment_Method: form.Payment_Method,
-<<<<<<< HEAD
       Customer_ID: form.Customer_ID === "none" ? "" : form.Customer_ID,
     }
 
@@ -157,15 +112,6 @@ export function Sales() {
     toast.success("Sale recorded successfully")
     setSheetOpen(false)
     refetchSales()
-=======
-      Customer_ID: form.Customer_ID || "",
-    }
-
-    await addSale(saleData)
-    toast.success("Sale recorded successfully")
-    setSheetOpen(false)
-    load()
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   return (
@@ -176,18 +122,11 @@ export function Sales() {
         </Button>
       </PageHeader>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search sales..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+        <Input placeholder="Search sales..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      {/* Sales history */}
       <div className="space-y-2.5">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
@@ -209,18 +148,12 @@ export function Sales() {
                       <Badge variant="secondary" className="text-[10px]">
                         {sale.Quantity_Sold} unit(s)
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {formatShortDate(sale.Sale_Date)}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{formatShortDate(sale.Sale_Date)}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-primary">
-                      {formatCurrency(sale.Total_Amount, currency)}
-                    </p>
-                    <p className="text-xs text-chart-2">
-                      +{formatCurrency(sale.Profit, currency)} profit
-                    </p>
+                    <p className="font-semibold text-primary">{formatCurrency(sale.Total_Amount, currency)}</p>
+                    <p className="text-xs text-chart-2">+{formatCurrency(sale.Profit, currency)} profit</p>
                   </div>
                 </div>
               </CardContent>
@@ -229,20 +162,15 @@ export function Sales() {
         )}
       </div>
 
-      {/* Add Sale Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Record New Sale</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="space-y-3 px-4">
-            {/* Product selection */}
             <div>
               <Label>Select Product</Label>
-              <Select
-                value={form.Product_ID}
-                onValueChange={(v) => setForm({ ...form, Product_ID: v })}
-              >
+              <Select value={form.Product_ID} onValueChange={(v) => setForm({ ...form, Product_ID: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a product..." />
                 </SelectTrigger>
@@ -256,25 +184,14 @@ export function Sales() {
               </Select>
             </div>
 
-            {/* Quantity */}
             <div>
               <Label htmlFor="qty">Quantity</Label>
-              <Input
-                id="qty"
-                type="number"
-                min="1"
-                value={form.Quantity_Sold}
-                onChange={(e) => setForm({ ...form, Quantity_Sold: e.target.value })}
-              />
+              <Input id="qty" type="number" min="1" value={form.Quantity_Sold} onChange={(e) => setForm({ ...form, Quantity_Sold: e.target.value })} />
             </div>
 
-            {/* Payment method */}
             <div>
               <Label>Payment Method</Label>
-              <Select
-                value={form.Payment_Method}
-                onValueChange={(v) => setForm({ ...form, Payment_Method: v })}
-              >
+              <Select value={form.Payment_Method} onValueChange={(v) => setForm({ ...form, Payment_Method: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -287,22 +204,14 @@ export function Sales() {
               </Select>
             </div>
 
-            {/* Customer (optional) */}
             <div>
               <Label>Customer (optional)</Label>
-              <Select
-                value={form.Customer_ID}
-                onValueChange={(v) => setForm({ ...form, Customer_ID: v })}
-              >
+              <Select value={form.Customer_ID} onValueChange={(v) => setForm({ ...form, Customer_ID: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Walk-in customer" />
                 </SelectTrigger>
                 <SelectContent>
-<<<<<<< HEAD
                   <SelectItem value="none">Walk-in customer</SelectItem>
-=======
-                  <SelectItem value="">Walk-in customer</SelectItem>
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
                   {customers.map((c) => (
                     <SelectItem key={c.Customer_ID} value={c.Customer_ID}>
                       {c.Customer_Name}
@@ -312,7 +221,6 @@ export function Sales() {
               </Select>
             </div>
 
-            {/* Live calculation summary */}
             {selectedProduct && (
               <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
                 <div className="flex justify-between text-sm">
@@ -325,9 +233,7 @@ export function Sales() {
                 </div>
                 <div className="flex justify-between border-t border-border/50 pt-1.5 text-sm">
                   <span className="text-muted-foreground">Profit</span>
-                  <span className="font-semibold text-chart-2">
-                    {formatCurrency(profit, currency)}
-                  </span>
+                  <span className="font-semibold text-chart-2">{formatCurrency(profit, currency)}</span>
                 </div>
               </div>
             )}

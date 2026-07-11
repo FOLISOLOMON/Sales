@@ -1,15 +1,11 @@
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
-<<<<<<< HEAD
 import { VitePWA } from "vite-plugin-pwa"
-=======
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { defineConfig } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
-<<<<<<< HEAD
   plugins: [
     react(),
     tailwindcss(),
@@ -52,9 +48,6 @@ export default defineConfig({
       },
     }),
   ],
-=======
-  plugins: [react(), tailwindcss()],
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

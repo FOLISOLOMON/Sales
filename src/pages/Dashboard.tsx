@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useMemo } from "react"
-=======
-import { useEffect, useState } from "react"
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import {
   TrendingUp,
   DollarSign,
@@ -37,17 +33,12 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts"
-<<<<<<< HEAD
 import { useSales, useProducts, useSettings } from "@/hooks/useQueries"
-=======
-import { getDashboard, getSales, getSettings } from "@/services/api"
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import {
   formatCurrency,
   formatShortDate,
   getLast7Days,
   getBestSellers,
-<<<<<<< HEAD
   getTodayString,
 } from "@/utils/formatters"
 
@@ -94,40 +85,12 @@ export function Dashboard() {
 
   const totalProducts = products.length
 
-  const totalStockValue = products
-    .reduce((sum, p) => sum + (Number(p.Stock_Quantity) || 0) * (Number(p.Selling_Price) || 0), 0)
+  const totalStockValue = products.reduce(
+    (sum, p) => sum + (Number(p.Stock_Quantity) || 0) * (Number(p.Selling_Price) || 0),
+    0
+  )
 
-  const lowStockCount = products
-    .filter((p) => (Number(p.Stock_Quantity) || 0) <= lowStockLimit)
-    .length
-=======
-} from "@/utils/formatters"
-
-export function Dashboard() {
-  const [dashboard, setDashboard] = useState(null)
-  const [sales, setSales] = useState([])
-  const [settings, setSettings] = useState({ Currency: "$", Business_Name: "Veloura" })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function load() {
-      const [d, s, st] = await Promise.all([
-        getDashboard(),
-        getSales(),
-        getSettings(),
-      ])
-      setDashboard(d)
-      setSales(s)
-      setSettings(st)
-      setLoading(false)
-    }
-    load()
-  }, [])
-
-  const currency = settings.Currency || "$"
-  const trendData = getLast7Days(sales)
-  const bestSellers = getBestSellers(sales, 5)
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
+  const lowStockCount = products.filter((p) => (Number(p.Stock_Quantity) || 0) <= lowStockLimit).length
 
   const chartConfig = {
     sales: { label: "Sales", color: "var(--chart-1)" },
@@ -140,12 +103,8 @@ export function Dashboard() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title={settings.Business_Name || "Veloura"}
-        subtitle="Business Overview"
-      />
+      <PageHeader title={settings.Business_Name || "Veloura"} subtitle="Business Overview" />
 
-      {/* Hero stat card */}
       {loading ? (
         <Skeleton className="h-32 w-full rounded-2xl" />
       ) : (
@@ -159,20 +118,12 @@ export function Dashboard() {
                   Today's Sales
                 </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-gold-gradient">
-<<<<<<< HEAD
                   {formatCurrency(todaySales, currency)}
-=======
-                  {formatCurrency(dashboard.today_sales, currency)}
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Profit:{" "}
+                  Profit: {" "}
                   <span className="font-medium text-foreground">
-<<<<<<< HEAD
-                     {formatCurrency(todayProfit, currency)}
-=======
-                    {formatCurrency(dashboard.today_profit, currency)}
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
+                    {formatCurrency(todayProfit, currency)}
                   </span>
                 </p>
               </div>
@@ -184,7 +135,6 @@ export function Dashboard() {
         </Card>
       )}
 
-      {/* Stat grid */}
       <div className="grid grid-cols-2 gap-3">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -192,52 +142,15 @@ export function Dashboard() {
           ))
         ) : (
           <>
-            <StatCard
-              icon={TrendingUp}
-              label="Monthly Revenue"
-<<<<<<< HEAD
-              value={formatCurrency(monthlyRevenue, currency)}
-=======
-              value={formatCurrency(dashboard.monthly_revenue, currency)}
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
-            />
-            <StatCard
-              icon={Wallet}
-              label="Monthly Profit"
-<<<<<<< HEAD
-              value={formatCurrency(monthlyProfit, currency)}
-=======
-              value={formatCurrency(dashboard.monthly_profit, currency)}
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
-            />
-            <StatCard
-              icon={Package}
-              label="Total Products"
-<<<<<<< HEAD
-              value={String(totalProducts)}
-=======
-              value={String(dashboard.total_products)}
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
-            />
-            <StatCard
-              icon={DollarSign}
-              label="Stock Value"
-<<<<<<< HEAD
-              value={formatCurrency(totalStockValue, currency)}
-=======
-              value={formatCurrency(dashboard.total_stock_value, currency)}
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
-            />
+            <StatCard icon={TrendingUp} label="Monthly Revenue" value={formatCurrency(monthlyRevenue, currency)} />
+            <StatCard icon={Wallet} label="Monthly Profit" value={formatCurrency(monthlyProfit, currency)} />
+            <StatCard icon={Package} label="Total Products" value={String(totalProducts)} />
+            <StatCard icon={DollarSign} label="Stock Value" value={formatCurrency(totalStockValue, currency)} />
           </>
         )}
       </div>
 
-      {/* Low stock alert */}
-<<<<<<< HEAD
       {!loading && lowStockCount > 0 && (
-=======
-      {!loading && dashboard.low_stock_count > 0 && (
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent>
             <div className="flex items-center gap-3">
@@ -247,23 +160,15 @@ export function Dashboard() {
               <div className="flex-1">
                 <p className="text-sm font-medium">Low Stock Alert</p>
                 <p className="text-xs text-muted-foreground">
-<<<<<<< HEAD
-                     {lowStockCount} item(s) need restocking
+                  {lowStockCount} item(s) need restocking
                 </p>
               </div>
-                <Badge variant="destructive">{lowStockCount}</Badge>
-=======
-                  {dashboard.low_stock_count} item(s) need restocking
-                </p>
-              </div>
-              <Badge variant="destructive">{dashboard.low_stock_count}</Badge>
->>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
+              <Badge variant="destructive">{lowStockCount}</Badge>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Sales & Profit trend chart */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -298,26 +203,13 @@ export function Dashboard() {
                 width={40}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Area
-                type="monotone"
-                dataKey="sales"
-                stroke="var(--color-sales)"
-                fill="url(#fillSales)"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="profit"
-                stroke="var(--color-profit)"
-                fill="url(#fillProfit)"
-                strokeWidth={2}
-              />
+              <Area type="monotone" dataKey="sales" stroke="var(--color-sales)" fill="url(#fillSales)" strokeWidth={2} />
+              <Area type="monotone" dataKey="profit" stroke="var(--color-profit)" fill="url(#fillProfit)" strokeWidth={2} />
             </AreaChart>
           </ChartContainer>
         </CardContent>
       </Card>
 
-      {/* Best selling products chart */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -327,40 +219,17 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={barConfig} className="min-h-[160px] w-full">
-            <BarChart
-              data={bestSellers}
-              layout="vertical"
-              accessibilityLayer
-              margin={{ left: 10, right: 10 }}
-            >
+            <BarChart data={bestSellers} layout="vertical" accessibilityLayer margin={{ left: 10, right: 10 }}>
               <CartesianGrid horizontal={false} strokeDasharray="3 3" opacity={0.15} />
-              <XAxis
-                type="number"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                width={80}
-              />
+              <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+              <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} width={80} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar
-                dataKey="quantity"
-                fill="var(--color-quantity)"
-                radius={4}
-                barSize={18}
-              />
+              <Bar dataKey="quantity" fill="var(--color-quantity)" radius={4} barSize={18} />
             </BarChart>
           </ChartContainer>
         </CardContent>
       </Card>
 
-      {/* Recent sales */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Recent Sales</CardTitle>
@@ -372,22 +241,15 @@ export function Dashboard() {
             ))
           ) : (
             sales.slice(0, 5).map((sale) => (
-              <div
-                key={sale.Sale_ID}
-                className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5"
-              >
+              <div key={sale.Sale_ID} className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {sale.Product_Name}
-                  </p>
+                  <p className="truncate text-sm font-medium">{sale.Product_Name}</p>
                   <p className="text-xs text-muted-foreground">
                     {sale.Quantity_Sold} unit(s) · {formatShortDate(sale.Sale_Date)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-primary">
-                    {formatCurrency(sale.Total_Amount, currency)}
-                  </p>
+                  <p className="text-sm font-semibold text-primary">{formatCurrency(sale.Total_Amount, currency)}</p>
                   <p className="flex items-center justify-end gap-0.5 text-xs text-muted-foreground">
                     <ArrowUpRight className="size-3 text-chart-2" />
                     {formatCurrency(sale.Profit, currency)}
@@ -402,15 +264,7 @@ export function Dashboard() {
   )
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-}) {
+function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <Card className="border-border/50">
       <CardContent className="py-4">
