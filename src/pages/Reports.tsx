@@ -26,6 +26,7 @@ import {
   isThisMonth,
   isInRange,
   getBestSellers,
+  normalizeDateString,
 } from "@/utils/formatters"
 
 type FilterType = "today" | "week" | "month" | "custom"
@@ -59,8 +60,8 @@ export function Reports() {
     }
   }
 
-  const filteredSales = useMemo(() => sales.filter((s) => filterByDate(s.Sale_Date)), [sales, filter, customStart, customEnd])
-  const filteredExpenses = useMemo(() => expenses.filter((e) => filterByDate(e.Expense_Date)), [expenses, filter, customStart, customEnd])
+  const filteredSales = useMemo(() => sales.filter((s) => filterByDate(normalizeDateString(s.Sale_Date))), [sales, filter, customStart, customEnd])
+  const filteredExpenses = useMemo(() => expenses.filter((e) => filterByDate(normalizeDateString(e.Expense_Date))), [expenses, filter, customStart, customEnd])
 
   const totalSales = filteredSales.reduce((sum, s) => sum + Number(s.Total_Amount || 0), 0)
   const totalProfit = filteredSales.reduce((sum, s) => sum + Number(s.Profit || 0), 0)

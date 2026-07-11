@@ -40,6 +40,7 @@ import {
   getLast7Days,
   getBestSellers,
   getTodayString,
+  normalizeDateString,
 } from "@/utils/formatters"
 
 export function Dashboard() {
@@ -60,25 +61,27 @@ export function Dashboard() {
   const lowStockLimit = parseInt(settings.Low_Stock_Limit || "3", 10)
 
   const todaySales = sales
-    .filter((s) => s.Sale_Date === todayStr)
+    .filter((s) => normalizeDateString(s.Sale_Date) === todayStr)
     .reduce((sum, s) => sum + (Number(s.Total_Amount) || 0), 0)
 
   const todayProfit = sales
-    .filter((s) => s.Sale_Date === todayStr)
+    .filter((s) => normalizeDateString(s.Sale_Date) === todayStr)
     .reduce((sum, s) => sum + (Number(s.Profit) || 0), 0)
 
   const monthlyRevenue = sales
     .filter((s) => {
-      if (!s.Sale_Date) return false
-      const [y, m] = s.Sale_Date.split("-").map(Number)
+      const normalized = normalizeDateString(s.Sale_Date)
+      if (!normalized) return false
+      const [y, m] = normalized.split("-").map(Number)
       return y === currentYear && m === currentMonth
     })
     .reduce((sum, s) => sum + (Number(s.Total_Amount) || 0), 0)
 
   const monthlyProfit = sales
     .filter((s) => {
-      if (!s.Sale_Date) return false
-      const [y, m] = s.Sale_Date.split("-").map(Number)
+      const normalized = normalizeDateString(s.Sale_Date)
+      if (!normalized) return false
+      const [y, m] = normalized.split("-").map(Number)
       return y === currentYear && m === currentMonth
     })
     .reduce((sum, s) => sum + (Number(s.Profit) || 0), 0)

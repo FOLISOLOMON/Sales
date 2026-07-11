@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink } from "react-router-dom"
 import {
   LayoutDashboard,
   Package,
@@ -48,7 +48,7 @@ function NavButton({ item }: { item: NavItem }) {
       end={item.end}
       className={({ isActive }) =>
         cn(
-          "flex min-w-[64px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition-all duration-200",
+          "flex min-w-[58px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition-all duration-200",
           isActive
             ? "bg-primary text-primary-foreground shadow-sm"
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -67,8 +67,6 @@ function NavButton({ item }: { item: NavItem }) {
 
 export function BottomNav() {
   const [open, setOpen] = useState(false)
-  const location = useLocation()
-  const isMoreActive = secondaryItems.some((item) => location.pathname.startsWith(item.to))
 
   return (
     <>
@@ -77,22 +75,20 @@ export function BottomNav() {
           {primaryItems.map((item) => (
             <NavButton key={item.to} item={item} />
           ))}
-
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className={cn(
-              "flex min-w-[64px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition-all duration-200",
-              isMoreActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <MoreHorizontal className="size-[18px]" strokeWidth={2.2} />
-            <span>More</span>
-          </button>
         </div>
       </nav>
+
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Open more navigation"
+        className={cn(
+          "fixed bottom-[5.4rem] right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_30px_rgba(0,0,0,0.18)] transition-all duration-300 hover:scale-105",
+          open && "translate-x-[160%] rotate-[-90deg] opacity-0"
+        )}
+      >
+        <MoreHorizontal className="size-6" strokeWidth={2.2} />
+      </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl pb-safe">

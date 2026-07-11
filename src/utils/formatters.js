@@ -31,16 +31,45 @@ export function formatShortDate(dateStr) {
   })
 }
 
+export function normalizeDateString(dateStr) {
+  if (!dateStr) return ""
+
+  const value = String(dateStr).trim()
+  if (!value) return ""
+
+  const dateOnly = value.split("T")[0]
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+    return dateOnly
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, "0")
+  const day = String(parsed.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 export function getTodayString() {
-  return new Date().toISOString().split("T")[0]
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 export function isToday(dateStr) {
-  return dateStr === getTodayString()
+  return normalizeDateString(dateStr) === getTodayString()
 }
 
 export function isThisWeek(dateStr) {
-  const date = new Date(dateStr)
+  const normalized = normalizeDateString(dateStr)
+  if (!normalized) return false
+
+  const date = new Date(normalized)
   const now = new Date()
   const weekAgo = new Date(now)
   weekAgo.setDate(now.getDate() - 7)
@@ -48,13 +77,19 @@ export function isThisWeek(dateStr) {
 }
 
 export function isThisMonth(dateStr) {
-  const date = new Date(dateStr)
+  const normalized = normalizeDateString(dateStr)
+  if (!normalized) return false
+
+  const date = new Date(normalized)
   const now = new Date()
   return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
 }
 
 export function isInRange(dateStr, startDate, endDate) {
-  const date = new Date(dateStr)
+  const normalized = normalizeDateString(dateStr)
+  if (!normalized) return false
+
+  const date = new Date(normalized)
   const start = new Date(startDate)
   const end = new Date(endDate)
   end.setHours(23, 59, 59, 999)
@@ -66,13 +101,16 @@ export function getLast7Days(sales) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split("T")[0]
-    const daySales = sales.filter((s) => s.Sale_Date === dateStr)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, "0")
+    const day = String(d.getDate()).padStart(2, "0")
+    const dateStr = `${year}-${month}-${day}`
+    const daySales = sales.filter((s) => normalizeDateString(s.Sale_Date) === dateStr)
     days.push({
       date: dateStr,
       label: d.toLocaleDateString("en-US", { weekday: "short" }),
-      sales: daySales.reduce((sum, s) => sum + s.Total_Amount, 0),
-      profit: daySales.reduce((sum, s) => sum + s.Profit, 0),
+      sales: daySales.reduce((sum, s) => sum + (Number(s.Total_Amount) || 0), 0),
+      profit: daySales.reduce((sum, s) => sum + (Number(s.Profit) || 0), 0),
     })
   }
   return days
