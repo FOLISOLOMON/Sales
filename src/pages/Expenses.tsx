@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState } from "react"
+=======
+import { useEffect, useState, useCallback } from "react"
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { Plus, Receipt, Trash2, Wallet, TrendingDown } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -30,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { PageHeader } from "@/components/layout/PageHeader"
+<<<<<<< HEAD
 import {
   useExpenses,
   useSales,
@@ -48,6 +53,16 @@ export function Expenses() {
 
   const loading = expensesLoading || salesLoading || settingsLoading
 
+=======
+import { getExpenses, getSales, addExpense, deleteExpense, getSettings } from "@/services/api"
+import { formatCurrency, formatShortDate, getTodayString } from "@/utils/formatters"
+
+export function Expenses() {
+  const [expenses, setExpenses] = useState([])
+  const [sales, setSales] = useState([])
+  const [settings, setSettings] = useState({ Currency: "$" })
+  const [loading, setLoading] = useState(true)
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const [sheetOpen, setSheetOpen] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
 
@@ -58,6 +73,22 @@ export function Expenses() {
     Expense_Date: getTodayString(),
   })
 
+<<<<<<< HEAD
+=======
+  const load = useCallback(async () => {
+    setLoading(true)
+    const [e, s, st] = await Promise.all([getExpenses(), getSales(), getSettings()])
+    setExpenses(e)
+    setSales(s)
+    setSettings(st)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const currency = settings.Currency || "$"
 
   const totalExpenses = expenses.reduce((sum, e) => sum + e.Amount, 0)
@@ -78,19 +109,34 @@ export function Expenses() {
       Expense_Date: form.Expense_Date,
     }
 
+<<<<<<< HEAD
     await addExpenseMutation.mutateAsync(data)
     toast.success("Expense added")
     setSheetOpen(false)
     setForm({ Expense_Name: "", Amount: "", Description: "", Expense_Date: getTodayString() })
     refetchExpenses()
+=======
+    await addExpense(data)
+    toast.success("Expense added")
+    setSheetOpen(false)
+    setForm({ Expense_Name: "", Amount: "", Description: "", Expense_Date: getTodayString() })
+    load()
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   async function handleDelete() {
     if (!deleteId) return
+<<<<<<< HEAD
     await deleteExpenseMutation.mutateAsync(deleteId)
     toast.success("Expense deleted")
     setDeleteId(null)
     refetchExpenses()
+=======
+    await deleteExpense(deleteId)
+    toast.success("Expense deleted")
+    setDeleteId(null)
+    load()
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   return (

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useMemo, useState } from "react"
+=======
+import { useEffect, useState, useCallback } from "react"
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { Calendar, TrendingUp, Wallet, Receipt, BarChart3 } from "lucide-react"
 import {
   Card,
@@ -20,7 +24,11 @@ import {
 } from "@/components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
 import { PageHeader } from "@/components/layout/PageHeader"
+<<<<<<< HEAD
 import { useSales, useExpenses, useSettings } from "@/hooks/useQueries"
+=======
+import { getSales, getExpenses, getSettings } from "@/services/api"
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import {
   formatCurrency,
   isToday,
@@ -33,16 +41,39 @@ import {
 type FilterType = "today" | "week" | "month" | "custom"
 
 export function Reports() {
+<<<<<<< HEAD
   const { data: sales = [], isLoading: salesLoading } = useSales()
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses()
   const { data: settings = { Currency: "$" }, isLoading: settingsLoading } = useSettings()
 
   const loading = salesLoading || expensesLoading || settingsLoading
 
+=======
+  const [sales, setSales] = useState([])
+  const [expenses, setExpenses] = useState([])
+  const [settings, setSettings] = useState({ Currency: "$" })
+  const [loading, setLoading] = useState(true)
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const [filter, setFilter] = useState<FilterType>("today")
   const [customStart, setCustomStart] = useState("")
   const [customEnd, setCustomEnd] = useState("")
 
+<<<<<<< HEAD
+=======
+  const load = useCallback(async () => {
+    setLoading(true)
+    const [s, e, st] = await Promise.all([getSales(), getExpenses(), getSettings()])
+    setSales(s)
+    setExpenses(e)
+    setSettings(st)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const currency = settings.Currency || "$"
 
   function filterByDate(dateStr) {
@@ -61,14 +92,23 @@ export function Reports() {
     }
   }
 
+<<<<<<< HEAD
   const filteredSales = useMemo(() => sales.filter((s) => filterByDate(s.Sale_Date)), [sales, filter, customStart, customEnd])
   const filteredExpenses = useMemo(() => expenses.filter((e) => filterByDate(e.Expense_Date)), [expenses, filter, customStart, customEnd])
+=======
+  const filteredSales = sales.filter((s) => filterByDate(s.Sale_Date))
+  const filteredExpenses = expenses.filter((e) => filterByDate(e.Expense_Date))
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 
   const totalSales = filteredSales.reduce((sum, s) => sum + s.Total_Amount, 0)
   const totalProfit = filteredSales.reduce((sum, s) => sum + s.Profit, 0)
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.Amount, 0)
   const netProfit = totalProfit - totalExpenses
+<<<<<<< HEAD
   const bestSellers = useMemo(() => getBestSellers(filteredSales, 5), [filteredSales])
+=======
+  const bestSellers = getBestSellers(filteredSales, 5)
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 
   const barConfig = {
     quantity: { label: "Units Sold", color: "var(--chart-1)" },

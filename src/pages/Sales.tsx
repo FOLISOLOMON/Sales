@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState, useCallback } from "react"
+=======
+import { useEffect, useState, useCallback } from "react"
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { Plus, ShoppingCart, Search } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -27,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PageHeader } from "@/components/layout/PageHeader"
+<<<<<<< HEAD
 import {
   useSales,
   useProducts,
@@ -45,6 +50,17 @@ export function Sales() {
 
   const loading = salesLoading || productsLoading || customersLoading || settingsLoading
 
+=======
+import { getSales, getProducts, getCustomers, addSale, getSettings } from "@/services/api"
+import { formatCurrency, formatShortDate, getTodayString } from "@/utils/formatters"
+
+export function Sales() {
+  const [sales, setSales] = useState([])
+  const [products, setProducts] = useState([])
+  const [customers, setCustomers] = useState([])
+  const [settings, setSettings] = useState({ Currency: "$" })
+  const [loading, setLoading] = useState(true)
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const [sheetOpen, setSheetOpen] = useState(false)
   const [search, setSearch] = useState("")
 
@@ -52,9 +68,34 @@ export function Sales() {
     Product_ID: "",
     Quantity_Sold: "1",
     Payment_Method: "Cash",
+<<<<<<< HEAD
     Customer_ID: "none",
   })
 
+=======
+    Customer_ID: "",
+  })
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const [s, p, c, st] = await Promise.all([
+      getSales(),
+      getProducts(),
+      getCustomers(),
+      getSettings(),
+    ])
+    setSales(s)
+    setProducts(p)
+    setCustomers(c)
+    setSettings(st)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const currency = settings.Currency || "$"
 
   const selectedProduct = products.find((p) => p.Product_ID === form.Product_ID)
@@ -108,6 +149,7 @@ export function Sales() {
       Profit: profit,
       Sale_Date: getTodayString(),
       Payment_Method: form.Payment_Method,
+<<<<<<< HEAD
       Customer_ID: form.Customer_ID === "none" ? "" : form.Customer_ID,
     }
 
@@ -115,6 +157,15 @@ export function Sales() {
     toast.success("Sale recorded successfully")
     setSheetOpen(false)
     refetchSales()
+=======
+      Customer_ID: form.Customer_ID || "",
+    }
+
+    await addSale(saleData)
+    toast.success("Sale recorded successfully")
+    setSheetOpen(false)
+    load()
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   return (
@@ -247,7 +298,11 @@ export function Sales() {
                   <SelectValue placeholder="Walk-in customer" />
                 </SelectTrigger>
                 <SelectContent>
+<<<<<<< HEAD
                   <SelectItem value="none">Walk-in customer</SelectItem>
+=======
+                  <SelectItem value="">Walk-in customer</SelectItem>
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
                   {customers.map((c) => (
                     <SelectItem key={c.Customer_ID} value={c.Customer_ID}>
                       {c.Customer_Name}

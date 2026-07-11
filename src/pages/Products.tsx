@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState } from "react"
+=======
+import { useEffect, useState, useCallback } from "react"
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { Search, Plus, Pencil, Trash2, Package, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -29,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { PageHeader } from "@/components/layout/PageHeader"
 import {
+<<<<<<< HEAD
   useProducts,
   useSettings,
   useAddProduct,
@@ -46,6 +51,20 @@ export function Products() {
 
   const loading = productsLoading || settingsLoading
 
+=======
+  getProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  getSettings,
+} from "@/services/api"
+import { formatCurrency, getTodayString } from "@/utils/formatters"
+
+export function Products() {
+  const [products, setProducts] = useState([])
+  const [settings, setSettings] = useState({ Currency: "$", Low_Stock_Limit: "3" })
+  const [loading, setLoading] = useState(true)
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const [search, setSearch] = useState("")
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -61,6 +80,21 @@ export function Products() {
     Date_Added: getTodayString(),
   })
 
+<<<<<<< HEAD
+=======
+  const load = useCallback(async () => {
+    setLoading(true)
+    const [p, s] = await Promise.all([getProducts(), getSettings()])
+    setProducts(p)
+    setSettings(s)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   const currency = settings.Currency || "$"
   const lowStockLimit = parseInt(settings.Low_Stock_Limit || "3", 10)
 
@@ -119,6 +153,7 @@ export function Products() {
     }
 
     if (editing) {
+<<<<<<< HEAD
       await updateProductMutation.mutateAsync({ productId: editing.Product_ID, updates: data })
       toast.success("Product updated")
     } else {
@@ -127,14 +162,31 @@ export function Products() {
     }
     setSheetOpen(false)
     refetchProducts()
+=======
+      await updateProduct(editing.Product_ID, data)
+      toast.success("Product updated")
+    } else {
+      await addProduct(data)
+      toast.success("Product added")
+    }
+    setSheetOpen(false)
+    load()
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   async function handleDelete() {
     if (!deleteId) return
+<<<<<<< HEAD
     await deleteProductMutation.mutateAsync(deleteId)
     toast.success("Product deleted")
     setDeleteId(null)
     refetchProducts()
+=======
+    await deleteProduct(deleteId)
+    toast.success("Product deleted")
+    setDeleteId(null)
+    load()
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   }
 
   return (

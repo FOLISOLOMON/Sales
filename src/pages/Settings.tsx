@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useState } from "react"
+=======
+import { useEffect, useState, useCallback } from "react"
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 import { Save, Store, User, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -13,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { PageHeader } from "@/components/layout/PageHeader"
+<<<<<<< HEAD
 import {
   useSettings,
   useUpdateSettings,
@@ -33,6 +38,38 @@ export function SettingsPage() {
   })
 
   if (isLoading || !settings) {
+=======
+import { getSettings, updateSettings } from "@/services/api"
+
+export function SettingsPage() {
+  const [settings, setSettings] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const s = await getSettings()
+    setSettings(s)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  function update(key, value) {
+    setSettings({ ...settings, [key]: value })
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    await updateSettings(settings)
+    toast.success("Settings saved")
+    setSaving(false)
+  }
+
+  if (loading || !settings) {
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
     return (
       <div className="space-y-4">
         <PageHeader title="Settings" subtitle="Business configuration" />
@@ -41,6 +78,7 @@ export function SettingsPage() {
     )
   }
 
+<<<<<<< HEAD
   // Sync local form when settings load or change externally
   if (
     settings &&
@@ -73,6 +111,8 @@ export function SettingsPage() {
     refetch()
   }
 
+=======
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
   return (
     <div className="space-y-4">
       <PageHeader title="Settings" subtitle="Business configuration" />
@@ -90,7 +130,11 @@ export function SettingsPage() {
             <Label htmlFor="biz-name">Business Name</Label>
             <Input
               id="biz-name"
+<<<<<<< HEAD
               value={form.Business_Name || ""}
+=======
+              value={settings.Business_Name || ""}
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
               onChange={(e) => update("Business_Name", e.target.value)}
             />
           </div>
@@ -98,7 +142,11 @@ export function SettingsPage() {
             <Label htmlFor="currency">Currency Symbol</Label>
             <Input
               id="currency"
+<<<<<<< HEAD
               value={form.Currency || ""}
+=======
+              value={settings.Currency || ""}
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
               onChange={(e) => update("Currency", e.target.value)}
               placeholder="$"
               maxLength={3}
@@ -108,7 +156,11 @@ export function SettingsPage() {
             <Label htmlFor="address">Business Address</Label>
             <Input
               id="address"
+<<<<<<< HEAD
               value={form.Business_Address || ""}
+=======
+              value={settings.Business_Address || ""}
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
               onChange={(e) => update("Business_Address", e.target.value)}
               placeholder="Street, City, State"
             />
@@ -129,7 +181,11 @@ export function SettingsPage() {
             <Label htmlFor="owner">Owner Name</Label>
             <Input
               id="owner"
+<<<<<<< HEAD
               value={form.Owner_Name || ""}
+=======
+              value={settings.Owner_Name || ""}
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
               onChange={(e) => update("Owner_Name", e.target.value)}
             />
           </div>
@@ -137,7 +193,11 @@ export function SettingsPage() {
             <Label htmlFor="phone">Phone Number</Label>
             <Input
               id="phone"
+<<<<<<< HEAD
               value={form.Phone_Number || ""}
+=======
+              value={settings.Phone_Number || ""}
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
               onChange={(e) => update("Phone_Number", e.target.value)}
               placeholder="+1 555-0000"
             />
@@ -160,7 +220,11 @@ export function SettingsPage() {
               id="low-stock"
               type="number"
               min="1"
+<<<<<<< HEAD
               value={form.Low_Stock_Limit || "3"}
+=======
+              value={settings.Low_Stock_Limit || "3"}
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
               onChange={(e) => update("Low_Stock_Limit", e.target.value)}
             />
             <p className="mt-1 text-xs text-muted-foreground">

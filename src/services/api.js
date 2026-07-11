@@ -164,7 +164,11 @@ export async function updateSettings(settings) {
 
 // ─── DASHBOARD API ────────────────────────────────────────────
 export async function getDashboard() {
+<<<<<<< HEAD
   return (await apiCall("getDashboard")) || {}
+=======
+  return await apiCall("getDashboard")
+>>>>>>> 515ee115e644d6ebf2d30cf2204548394dd397fb
 }
 
 export { API_URL }
