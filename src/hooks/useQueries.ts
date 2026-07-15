@@ -4,6 +4,7 @@ import {
   getProducts,
   getSettings,
   addSale,
+  updateSale,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -100,6 +101,41 @@ export function useAddSale() {
       }
     },
     onError: (_err, _saleData, context) => {
+      if (context?.previous) {
+        qc.setQueryData(queryKeys.sales, context.previous)
+      }
+    },
+  })
+}
+
+export function useUpdateSale() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ saleId, updates }: { saleId: string; updates: Record<string, unknown> }) => {
+      if (!navigator.onLine) {
+        await enqueueMutation("update-sale", { Sale_ID: saleId, ...updates })
+        return { offline: true }
+      }
+      await updateSale(saleId, updates)
+      return { offline: false }
+    },
+    onMutate: async ({ saleId, updates }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.sales })
+      const previous = qc.getQueryData(queryKeys.sales)
+      qc.setQueryData(queryKeys.sales, (old: any[] = []) =>
+        old.map((s) => (s.Sale_ID === saleId ? { ...s, ...updates, _pendingSync: true } : s))
+      )
+      return { previous }
+    },
+    onSuccess: (result) => {
+      if (result.offline) {
+        toast.success("Sale updated offline. Will sync when online.")
+      } else {
+        qc.invalidateQueries({ queryKey: queryKeys.sales })
+        qc.invalidateQueries({ queryKey: queryKeys.customers })
+      }
+    },
+    onError: (_err, _vars, context) => {
       if (context?.previous) {
         qc.setQueryData(queryKeys.sales, context.previous)
       }

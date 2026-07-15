@@ -35,7 +35,7 @@ import {
   useUpdateCustomer,
   useDeleteCustomer,
 } from "@/hooks/useQueries"
-import { formatCurrency, formatShortDate, getTodayString, getInitials } from "@/utils/formatters"
+import { formatCurrency, formatShortDate, getTodayString, getInitials, getCustomerPurchases, getCustomerTotalSpent } from "@/utils/formatters"
 
 export function Customers() {
   const { data: customers = [], isLoading: customersLoading, refetch: refetchCustomers } = useCustomers()
@@ -61,14 +61,6 @@ export function Customers() {
   })
 
   const currency = settings.Currency || "$"
-
-  function getCustomerPurchases(customerId) {
-    return sales.filter((s) => s.Customer_ID === customerId)
-  }
-
-  function getCustomerTotal(customerId) {
-    return getCustomerPurchases(customerId).reduce((sum, s) => sum + (Number(s.Total_Amount) || 0), 0)
-  }
 
   function openAdd() {
     setEditing(null)
@@ -138,8 +130,8 @@ export function Customers() {
           </div>
         ) : (
           customers.map((customer) => {
-            const purchases = getCustomerPurchases(customer.Customer_ID)
-            const totalSpent = getCustomerTotal(customer.Customer_ID)
+            const purchases = getCustomerPurchases(sales, customer.Customer_ID)
+            const totalSpent = getCustomerTotalSpent(sales, customer.Customer_ID)
             const isExpanded = expandedId === customer.Customer_ID
 
             return (

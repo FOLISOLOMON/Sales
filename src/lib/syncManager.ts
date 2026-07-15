@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import {
   addSale,
+  updateSale,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -20,6 +21,7 @@ type SyncApiFn = (data: Record<string, unknown>) => Promise<unknown>;
 
 const mutationHandlers: Record<string, SyncApiFn> = {
   "add-sale": addSale,
+  "update-sale": updateSale,
   "add-product": addProduct,
   "update-product": updateProduct,
   "delete-product": deleteProduct,

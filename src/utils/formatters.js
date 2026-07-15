@@ -136,7 +136,7 @@ export function getCustomerPurchases(sales, customerId) {
 
 export function getCustomerTotalSpent(sales, customerId) {
   return getCustomerPurchases(sales, customerId).reduce(
-    (sum, s) => sum + s.Total_Amount,
+    (sum, s) => sum + (Number(s.Total_Amount) || 0),
     0
   )
 }

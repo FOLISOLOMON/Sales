@@ -3,6 +3,7 @@ import {
   TrendingUp,
   DollarSign,
   Package,
+  Boxes,
   AlertTriangle,
   Wallet,
   BarChart3,
@@ -88,6 +89,11 @@ export function Dashboard() {
 
   const totalProducts = products.length
 
+  const totalStockUnits = products.reduce(
+    (sum, p) => sum + (Number(p.Stock_Quantity) || 0),
+    0
+  )
+
   const totalStockValue = products.reduce(
     (sum, p) => sum + (Number(p.Stock_Quantity) || 0) * (Number(p.Selling_Price) || 0),
     0
@@ -148,6 +154,7 @@ export function Dashboard() {
             <StatCard icon={TrendingUp} label="Monthly Revenue" value={formatCurrency(monthlyRevenue, currency)} />
             <StatCard icon={Wallet} label="Monthly Profit" value={formatCurrency(monthlyProfit, currency)} />
             <StatCard icon={Package} label="Total Products" value={String(totalProducts)} />
+            <StatCard icon={Boxes} label="Total Stock" value={`${totalStockUnits} unit(s)`} />
             <StatCard icon={DollarSign} label="Stock Value" value={formatCurrency(totalStockValue, currency)} />
           </>
         )}

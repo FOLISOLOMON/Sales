@@ -122,6 +122,10 @@ export async function addSale(sale) {
   return await apiPost("addSale", sale)
 }
 
+export async function updateSale(saleId, updates) {
+  return await apiPost("updateSale", { Sale_ID: saleId, ...updates })
+}
+
 // ─── EXPENSES API ─────────────────────────────────────────────
 export async function getExpenses() {
   return (await apiCall("getExpenses")) || []
