@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, Pencil, Trash2, Users, Phone, MapPin, ShoppingBag, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -26,7 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { PageHeader } from "@/components/layout/PageHeader"
+import { DataError } from "@/components/DataError"
+import { AnimatedCard } from "@/components/AnimatedCard"
+import { motion } from "motion/react"
+import { stagger } from "@/lib/motion"
 import {
   useCustomers,
   useSales,
@@ -36,17 +39,29 @@ import {
   useDeleteCustomer,
 } from "@/hooks/useQueries"
 import { formatCurrency, formatShortDate, getTodayString, getInitials, getCustomerPurchases, getCustomerTotalSpent } from "@/utils/formatters"
+import { usePageTitle, useAddAction } from "@/components/layout/AppShell"
 
 export function Customers() {
-  const { data: customers = [], isLoading: customersLoading, refetch: refetchCustomers } = useCustomers()
-  const { data: sales = [], isLoading: salesLoading } = useSales()
-  const { data: settings = { Currency: "$" }, isLoading: settingsLoading } = useSettings()
+  const { data: customers = [], isLoading: customersLoading, isError: customersError, refetch: refetchCustomers } = useCustomers()
+  const { data: sales = [], isLoading: salesLoading, isError: salesError, refetch: refetchSales } = useSales()
+  const { data: settings = { Currency: "$" }, isLoading: settingsLoading, isError: settingsError, refetch: refetchSettings } = useSettings()
+  const { setTitle } = usePageTitle()
   const addCustomerMutation = useAddCustomer()
   const updateCustomerMutation = useUpdateCustomer()
   const deleteCustomerMutation = useDeleteCustomer()
 
   const loading = customersLoading || salesLoading || settingsLoading
+  const isError = customersError || salesError || settingsError
+  const retryAll = () => {
+    refetchCustomers()
+    refetchSales()
+    refetchSettings()
+  }
   const isSaving = addCustomerMutation.isPending || updateCustomerMutation.isPending
+
+  useEffect(() => {
+    setTitle("Customers", `${customers.length} customers`)
+  }, [customers, setTitle])
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -62,7 +77,7 @@ export function Customers() {
 
   const currency = settings.Currency || "$"
 
-  function openAdd() {
+  const openAdd = useCallback(() => {
     setEditing(null)
     setForm({
       Customer_Name: "",
@@ -71,7 +86,14 @@ export function Customers() {
       Date_Added: getTodayString(),
     })
     setSheetOpen(true)
-  }
+  }, [])
+
+  const registerAddAction = useAddAction()
+
+  useEffect(() => {
+    registerAddAction(openAdd)
+    return () => registerAddAction(undefined)
+  }, [registerAddAction, openAdd])
 
   function openEdit(customer) {
     setEditing(customer)
@@ -112,114 +134,138 @@ export function Customers() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Customers" subtitle={`${customers.length} customers`}>
-        <Button size="icon" onClick={openAdd} className="bg-primary text-primary-foreground">
-          <Plus className="size-5" />
-        </Button>
-      </PageHeader>
-
-      <div className="space-y-2.5">
+      <motion.div
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: stagger.item } },
+        }}
+        initial="hidden"
+        animate="show"
+        className="space-y-2.5"
+      >
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24 w-full rounded-2xl" />
           ))
+        ) : isError && customers.length === 0 ? (
+          <DataError onRetry={retryAll} />
         ) : customers.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <Users className="size-12 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">No customers yet</p>
           </div>
         ) : (
-          customers.map((customer) => {
+          customers.map((customer, index) => {
             const purchases = getCustomerPurchases(sales, customer.Customer_ID)
             const totalSpent = getCustomerTotalSpent(sales, customer.Customer_ID)
             const isExpanded = expandedId === customer.Customer_ID
 
             return (
-              <Card key={customer.Customer_ID} className="border-border/50">
-                <CardContent className="py-3.5">
-                  <button
-                    onClick={() => setExpandedId(isExpanded ? null : customer.Customer_ID)}
-                    className="w-full text-left"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-                          {getInitials(customer.Customer_Name)}
-                        </div>
-                        <div>
-                          <p className="font-medium">{customer.Customer_Name}</p>
-                          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                            <Phone className="size-3" />
-                            {customer.Phone_Number}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-primary">
-                          {formatCurrency(totalSpent, currency)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {purchases.length} purchase(s)
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="mt-3 space-y-2 border-t border-border/50 pt-3">
-                      {customer.Location && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <MapPin className="size-3" />
-                          {customer.Location}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <ShoppingBag className="size-3" />
-                        Purchase History
-                      </div>
-                      {purchases.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">No purchases yet</p>
-                      ) : (
-                        purchases.slice(0, 5).map((sale) => (
-                          <div
-                            key={sale.Sale_ID}
-                            className="flex items-center justify-between rounded-lg bg-muted/30 px-2.5 py-1.5"
-                          >
+              <motion.div
+                key={customer.Customer_ID}
+                variants={{
+                  hidden: { opacity: 0, y: 8 },
+                  show: { opacity: 1, y: 0 },
+                }}
+                transition={{ type: "spring", stiffness: 200, damping: 24 }}
+              >
+                <AnimatedCard delay={index * 0.04}>
+                  <Card className="border-border/50 bg-transparent">
+                    <CardContent className="py-3.5">
+                      <button
+                        onClick={() => setExpandedId(isExpanded ? null : customer.Customer_ID)}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <motion.div
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+                              whileHover={{ scale: 1.1 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            >
+                              {getInitials(customer.Customer_Name)}
+                            </motion.div>
                             <div>
-                              <p className="text-xs font-medium">{sale.Product_Name}</p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {sale.Quantity_Sold} unit(s) · {formatShortDate(sale.Sale_Date)}
-                              </p>
+                              <p className="font-medium">{customer.Customer_Name}</p>
+                              <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                                <Phone className="size-3" />
+                                {customer.Phone_Number}
+                              </div>
                             </div>
-                            <p className="text-xs font-semibold text-primary">
-                              {formatCurrency(sale.Total_Amount, currency)}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-primary">
+                              {formatCurrency(totalSpent, currency)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {purchases.length} purchase(s)
                             </p>
                           </div>
-                        ))
-                      )}
-                      <div className="flex gap-1.5 pt-1">
-                        <Button size="xs" variant="ghost" onClick={() => openEdit(customer)}>
-                          <Pencil className="size-3" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => setDeleteId(customer.Customer_ID)}
-                          className="text-destructive hover:text-destructive"
+                        </div>
+                      </button>
+
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 200, damping: 24 }}
+                          className="mt-3 space-y-2 overflow-hidden border-t border-border/50 pt-3"
                         >
-                          <Trash2 className="size-3" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                          {customer.Location && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <MapPin className="size-3" />
+                              {customer.Location}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <ShoppingBag className="size-3" />
+                            Purchase History
+                          </div>
+                          {purchases.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">No purchases yet</p>
+                          ) : (
+                            purchases.slice(0, 5).map((sale) => (
+                              <div
+                                key={sale.Sale_ID}
+                                className="flex items-center justify-between rounded-lg bg-muted/30 px-2.5 py-1.5"
+                              >
+                                <div>
+                                  <p className="text-xs font-medium">{sale.Product_Name}</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {sale.Quantity_Sold} unit(s) · {formatShortDate(sale.Sale_Date)}
+                                  </p>
+                                </div>
+                                <p className="text-xs font-semibold text-primary">
+                                  {formatCurrency(sale.Total_Amount, currency)}
+                                </p>
+                              </div>
+                            ))
+                          )}
+                          <div className="flex gap-1.5 pt-1">
+                            <Button size="xs" variant="ghost" onClick={() => openEdit(customer)}>
+                              <Pencil className="size-3" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => setDeleteId(customer.Customer_ID)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="size-3" />
+                              Delete
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </AnimatedCard>
+              </motion.div>
             )
           })
         )}
-      </div>
+      </motion.div>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">

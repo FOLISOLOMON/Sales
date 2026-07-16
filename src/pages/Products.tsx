@@ -1,10 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Search, Plus, Pencil, Trash2, Package, AlertTriangle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,7 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { PageHeader } from "@/components/layout/PageHeader"
+import { DataError } from "@/components/DataError"
+import { AnimatedCard } from "@/components/AnimatedCard"
+import { motion } from "motion/react"
+import { stagger } from "@/lib/motion"
 import {
   useProducts,
   useSettings,
@@ -36,16 +36,27 @@ import {
   useDeleteProduct,
 } from "@/hooks/useQueries"
 import { formatCurrency, getTodayString } from "@/utils/formatters"
+import { usePageTitle, useAddAction } from "@/components/layout/AppShell"
 
 export function Products() {
-  const { data: products = [], isLoading: productsLoading, refetch: refetchProducts } = useProducts()
-  const { data: settings = { Currency: "$", Low_Stock_Limit: "3" }, isLoading: settingsLoading } = useSettings()
+  const { data: products = [], isLoading: productsLoading, isError: productsError, refetch: refetchProducts } = useProducts()
+  const { data: settings = { Currency: "$", Low_Stock_Limit: "3" }, isLoading: settingsLoading, isError: settingsError, refetch: refetchSettings } = useSettings()
+  const { setTitle } = usePageTitle()
   const addProductMutation = useAddProduct()
   const updateProductMutation = useUpdateProduct()
   const deleteProductMutation = useDeleteProduct()
 
   const loading = productsLoading || settingsLoading
+  const isError = productsError || settingsError
+  const retryAll = () => {
+    refetchProducts()
+    refetchSettings()
+  }
   const isSaving = addProductMutation.isPending || updateProductMutation.isPending
+
+  useEffect(() => {
+    setTitle("Products", `${products.length} items in inventory`)
+  }, [products, setTitle])
 
   const [search, setSearch] = useState("")
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -76,7 +87,7 @@ export function Products() {
 
   const profitPerItem = (parseFloat(form.Selling_Price) || 0) - (parseFloat(form.Cost_Price) || 0)
 
-  function openAdd() {
+  const openAdd = useCallback(() => {
     setEditing(null)
     setForm({
       Product_Name: "",
@@ -88,7 +99,14 @@ export function Products() {
       Date_Added: getTodayString(),
     })
     setSheetOpen(true)
-  }
+  }, [])
+
+  const registerAddAction = useAddAction()
+
+  useEffect(() => {
+    registerAddAction(openAdd)
+    return () => registerAddAction(undefined)
+  }, [registerAddAction, openAdd])
 
   function openEdit(product) {
     setEditing(product)
@@ -139,73 +157,99 @@ export function Products() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Products" subtitle={`${products.length} items in inventory`}>
-        <Button size="icon" onClick={openAdd} className="bg-primary text-primary-foreground">
-          <Plus className="size-5" />
-        </Button>
-      </PageHeader>
-
       <div className="relative">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="space-y-2.5">
+      <motion.div
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: stagger.item } },
+        }}
+        initial="hidden"
+        animate="show"
+        className="space-y-2.5"
+      >
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-20 w-full rounded-2xl" />
           ))
+        ) : isError && filtered.length === 0 ? (
+          <DataError onRetry={retryAll} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <Package className="size-12 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">No products found</p>
           </div>
         ) : (
-          filtered.map((product) => {
-            const isLowStock = Number(product.Stock_Quantity || 0) <= lowStockLimit
+          filtered.map((product, index) => {
+            const stockNum = Number(product.Stock_Quantity || 0)
+            const isOutOfStock = stockNum === 0
+            const isLowStock = stockNum > 0 && stockNum <= lowStockLimit
             const profit = (Number(product.Selling_Price) || 0) - (Number(product.Cost_Price) || 0)
             return (
-              <Card key={product.Product_ID} className="border-border/50">
-                <CardContent className="py-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate font-medium">{product.Product_Name}</p>
-                        {isLowStock && (
-                          <Badge variant="destructive" className="shrink-0 gap-1 text-[10px]">
-                            <AlertTriangle className="size-2.5" />
-                            Low
-                          </Badge>
-                        )}
+              <motion.div
+                key={product.Product_ID}
+                variants={{
+                  hidden: { opacity: 0, y: 8 },
+                  show: { opacity: 1, y: 0 },
+                }}
+                transition={{ type: "spring", stiffness: 200, damping: 24 }}
+              >
+                <AnimatedCard delay={index * 0.04}>
+                  <Card className="border-border/50 bg-transparent">
+                    <CardContent className="py-3.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate font-medium">{product.Product_Name}</p>
+                            {isOutOfStock ? (
+                              <Badge variant="destructive" className="shrink-0 gap-1 text-[10px]">
+                                <AlertTriangle className="size-2.5" />
+                                Out of stock
+                              </Badge>
+                            ) : isLowStock ? (
+                              <Badge variant="destructive" className="shrink-0 gap-1 text-[10px]">
+                                <AlertTriangle className="size-2.5" />
+                                Low
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{product.Brand} · {product.Category}</p>
+                          <div className="mt-2 flex items-center gap-3 text-xs">
+                            {isOutOfStock ? (
+                              <span className="font-medium text-destructive">Out of stock</span>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                Stock: <span className="font-medium text-foreground">{product.Stock_Quantity}</span>
+                              </span>
+                            )}
+                            <span className="text-muted-foreground">
+                              Profit: <span className="font-medium text-chart-2">{formatCurrency(profit, currency)}</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <p className="font-semibold text-primary">{formatCurrency(product.Selling_Price, currency)}</p>
+                          <div className="flex gap-1">
+                            <Button size="icon-xs" variant="ghost" onClick={() => openEdit(product)}>
+                              <Pencil className="size-3.5" />
+                            </Button>
+                            <Button size="icon-xs" variant="ghost" onClick={() => setDeleteId(product.Product_ID)} className="text-destructive hover:text-destructive">
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{product.Brand} · {product.Category}</p>
-                      <div className="mt-2 flex items-center gap-3 text-xs">
-                        <span className="text-muted-foreground">
-                          Stock: <span className="font-medium text-foreground">{product.Stock_Quantity}</span>
-                        </span>
-                        <span className="text-muted-foreground">
-                          Profit: <span className="font-medium text-chart-2">{formatCurrency(profit, currency)}</span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <p className="font-semibold text-primary">{formatCurrency(product.Selling_Price, currency)}</p>
-                      <div className="flex gap-1">
-                        <Button size="icon-xs" variant="ghost" onClick={() => openEdit(product)}>
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button size="icon-xs" variant="ghost" onClick={() => setDeleteId(product.Product_ID)} className="text-destructive hover:text-destructive">
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </AnimatedCard>
+              </motion.div>
             )
           })
         )}
-      </div>
+      </motion.div>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">

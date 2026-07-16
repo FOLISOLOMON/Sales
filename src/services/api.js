@@ -6,7 +6,18 @@
 // ============================================================
 
 // ─── CONFIGURATION ───────────────────────────────────────────
-const API_URL = "https://script.google.com/macros/s/AKfycbw7YDrLG5Fzu7Z4vUZ4pA8zfwIWdOPy76hzF2_ltbtT0Oe-1Iej3tgvbTe4dYmTeG4H/exec"
+const API_URL = "https://script.google.com/macros/s/AKfycbwl_vOkCOszxjKeiljQW0jf_Yl4YOnyu7gB2IdiC4URgy_-Cn8XHZBVbq3UbrsA364r/exec"
+
+// ─── ERROR TYPE ──────────────────────────────────────────────
+// Thrown on any API failure so React Query can surface `isError`
+// instead of the caller silently receiving `null`/`[]`.
+export class ApiError extends Error {
+  constructor(message, info = {}) {
+    super(message)
+    this.name = "ApiError"
+    Object.assign(this, info) // { status, isNetwork, isHtml, isConfig, detail }
+  }
+}
 
 // ─── HELPER: PARSE RESPONSE SAFELY ───────────────────────────
 async function parseJsonSafely(response, action) {
@@ -18,18 +29,25 @@ async function parseJsonSafely(response, action) {
       `[Veloura API] "${action}" failed with HTTP ${response.status} ${response.statusText}`,
       bodyText.substring(0, 300)
     )
-    return null
+    throw new ApiError(`"${action}" failed with HTTP ${response.status} ${response.statusText}`, {
+      status: response.status,
+      detail: bodyText.substring(0, 300),
+    })
   }
 
   if (contentType.includes("text/html")) {
     const bodyText = await response.text().catch(() => "")
     const errorMatch = bodyText.match(/<div[^>]*>(.*?)<\/div>/g)
     const errorHtml = errorMatch?.[errorMatch.length - 1] || bodyText.substring(0, 300)
+    const detail = errorHtml.replace(/<[^>]*>/g, "").trim()
     console.error(
       `[Veloura API] "${action}" returned HTML instead of JSON — your Google Apps Script has an error.`,
-      errorHtml.replace(/<[^>]*>/g, "").trim()
+      detail
     )
-    return null
+    throw new ApiError(`"${action}" returned HTML instead of JSON — the Google Apps Script has an error.`, {
+      isHtml: true,
+      detail,
+    })
   }
 
   const text = await response.text()
@@ -40,13 +58,17 @@ async function parseJsonSafely(response, action) {
       `[Veloura API] "${action}" returned non-JSON response that could not be parsed.`,
       text.substring(0, 300)
     )
-    return null
+    throw new ApiError(`"${action}" returned a non-JSON response that could not be parsed.`, {
+      detail: text.substring(0, 300),
+    })
   }
 }
 
 // ─── HELPER: API CALL ─────────────────────────────────────────
 async function apiCall(action, params = {}) {
-  if (!API_URL) return null
+  if (!API_URL) {
+    throw new ApiError("API_URL is not configured.", { isConfig: true })
+  }
 
   const url = new URL(API_URL)
   url.searchParams.set("action", action)
@@ -58,22 +80,28 @@ async function apiCall(action, params = {}) {
     url.searchParams.set(key, String(value))
   }
 
+  let response
   try {
-    const response = await fetch(url.toString(), {
+    response = await fetch(url.toString(), {
       method: "GET",
       redirect: "follow",
       credentials: "omit", // <--- CRITICAL FIX: Prevents mobile browsers from blocking the Google redirect
     })
-    return parseJsonSafely(response, action)
   } catch (e) {
     console.error(`[Veloura API] Network error for "${action}":`, e.message)
-    return null
+    throw new ApiError(`Network error while contacting the API for "${action}".`, {
+      isNetwork: true,
+      detail: e.message,
+    })
   }
+  return parseJsonSafely(response, action)
 }
 
 
 async function apiPost(action, data = {}) {
-  if (!API_URL) return null
+  if (!API_URL) {
+    throw new ApiError("API_URL is not configured.", { isConfig: true })
+  }
 
   const formData = new FormData()
   formData.append("action", action)
@@ -81,18 +109,22 @@ async function apiPost(action, data = {}) {
     formData.append(key, String(value))
   }
 
+  let response
   try {
-    const response = await fetch(API_URL, {
+    response = await fetch(API_URL, {
       method: "POST",
       body: formData,
       redirect: "follow",
       credentials: "omit", // <--- CRITICAL FIX: Same fix for POST requests
     })
-    return parseJsonSafely(response, action)
   } catch (e) {
     console.error(`[Veloura API] Network error for "${action}":`, e.message)
-    return null
+    throw new ApiError(`Network error while contacting the API for "${action}".`, {
+      isNetwork: true,
+      detail: e.message,
+    })
   }
+  return parseJsonSafely(response, action)
 }
 
 // ─── PRODUCTS API ─────────────────────────────────────────────
@@ -124,6 +156,13 @@ export async function addSale(sale) {
 
 export async function updateSale(saleId, updates) {
   return await apiPost("updateSale", { Sale_ID: saleId, ...updates })
+}
+
+export async function voidSale(saleId) {
+  // Accepts a plain Sale_ID string (direct call) or a { Sale_ID } payload
+  // (offline sync replays the enqueued mutation.data object).
+  const id = saleId && typeof saleId === "object" ? saleId.Sale_ID : saleId
+  return await apiPost("voidSale", { Sale_ID: id })
 }
 
 // ─── EXPENSES API ─────────────────────────────────────────────
@@ -164,12 +203,6 @@ export async function getSettings() {
 
 export async function updateSettings(settings) {
   return await apiPost("updateSettings", settings)
-}
-
-// ─── DASHBOARD API ────────────────────────────────────────────
-export async function getDashboard() {
-  return (await apiCall("getDashboard")) || {}
-  return await apiCall("getDashboard")
 }
 
 export { API_URL }

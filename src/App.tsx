@@ -26,6 +26,9 @@ export function App() {
       <Toaster
         position="top-center"
         toastOptions={{
+          classNames: {
+            toast: "backdrop-blur-xl border-white/10 shadow-2xl",
+          },
           style: {
             background: "var(--card)",
             border: "1px solid var(--border)",

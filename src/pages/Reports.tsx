@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { Calendar, TrendingUp, Wallet, Receipt, BarChart3 } from "lucide-react"
 import {
   Card,
@@ -17,8 +17,13 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
-import { PageHeader } from "@/components/layout/PageHeader"
+import { DataError } from "@/components/DataError"
+import { AnimatedCard } from "@/components/AnimatedCard"
+import { AnimatedCounter } from "@/components/AnimatedCounter"
+import { motion } from "motion/react"
+import { stagger } from "@/lib/motion"
 import { useSales, useExpenses, useSettings } from "@/hooks/useQueries"
+import { usePageTitle } from "@/components/layout/AppShell"
 import {
   formatCurrency,
   isToday,
@@ -32,11 +37,22 @@ import {
 type FilterType = "today" | "week" | "month" | "custom"
 
 export function Reports() {
-  const { data: sales = [], isLoading: salesLoading } = useSales()
-  const { data: expenses = [], isLoading: expensesLoading } = useExpenses()
-  const { data: settings = { Currency: "$" }, isLoading: settingsLoading } = useSettings()
+  const { data: sales = [], isLoading: salesLoading, isError: salesError, refetch: refetchSales } = useSales()
+  const { data: expenses = [], isLoading: expensesLoading, isError: expensesError, refetch: refetchExpenses } = useExpenses()
+  const { data: settings = { Currency: "$" }, isLoading: settingsLoading, isError: settingsError, refetch: refetchSettings } = useSettings()
+  const { setTitle } = usePageTitle()
 
   const loading = salesLoading || expensesLoading || settingsLoading
+  const isError = salesError || expensesError || settingsError
+  const retryAll = () => {
+    refetchSales()
+    refetchExpenses()
+    refetchSettings()
+  }
+
+  useEffect(() => {
+    setTitle("Reports", "Business performance")
+  }, [setTitle])
 
   const [filter, setFilter] = useState<FilterType>("today")
   const [customStart, setCustomStart] = useState("")
@@ -75,8 +91,10 @@ export function Reports() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Reports" subtitle="Business performance" />
-
+      {!loading && isError && sales.length === 0 && expenses.length === 0 ? (
+        <DataError onRetry={retryAll} />
+      ) : (
+      <>
       <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="today">Today</TabsTrigger>
@@ -106,37 +124,52 @@ export function Reports() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <SummaryCard icon={TrendingUp} label="Total Sales" value={formatCurrency(totalSales, currency)} color="text-primary" />
-          <SummaryCard icon={Wallet} label="Total Profit" value={formatCurrency(totalProfit, currency)} color="text-chart-2" />
-          <SummaryCard icon={Receipt} label="Total Expenses" value={formatCurrency(totalExpenses, currency)} color="text-destructive" />
-          <SummaryCard icon={Wallet} label="Net Profit" value={formatCurrency(netProfit, currency)} color={netProfit >= 0 ? "text-chart-2" : "text-destructive"} />
-        </div>
+        <motion.div
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: stagger.item } },
+          }}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 gap-3"
+        >
+          <SummaryCard icon={TrendingUp} label="Total Sales" value={totalSales} prefix={currency} color="text-primary" />
+          <SummaryCard icon={Wallet} label="Total Profit" value={totalProfit} prefix={currency} color="text-chart-2" />
+          <SummaryCard icon={Receipt} label="Total Expenses" value={totalExpenses} prefix={currency} color="text-destructive" />
+          <SummaryCard icon={Wallet} label="Net Profit" value={netProfit} prefix={currency} color={netProfit >= 0 ? "text-chart-2" : "text-destructive"} />
+        </motion.div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BarChart3 className="size-4 text-primary" />
-            Best Selling Products
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {bestSellers.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No sales data for this period</p>
-          ) : (
-            <ChartContainer config={barConfig} className="min-h-[160px] w-full">
-              <BarChart data={bestSellers} layout="vertical" accessibilityLayer margin={{ left: 10, right: 10 }}>
-                <CartesianGrid horizontal={false} strokeDasharray="3 3" opacity={0.15} />
-                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} width={80} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="quantity" fill="var(--color-quantity)" radius={4} barSize={18} />
-              </BarChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, scaleY: 0 }}
+        animate={{ opacity: 1, scaleY: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        style={{ transformOrigin: "bottom" }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="size-4 text-primary" />
+              Best Selling Products
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {bestSellers.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No sales data for this period</p>
+            ) : (
+              <ChartContainer config={barConfig} className="min-h-[160px] w-full">
+                <BarChart data={bestSellers} layout="vertical" margin={{ left: 10, right: 10 }}>
+                  <CartesianGrid horizontal={false} strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                  <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} width={80} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="quantity" fill="var(--color-quantity)" radius={4} barSize={18} />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <Card>
         <CardHeader>
@@ -150,35 +183,60 @@ export function Reports() {
           ) : filteredSales.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">No sales in this period</p>
           ) : (
-            filteredSales.slice(0, 10).map((sale) => (
-              <div key={sale.Sale_ID} className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5">
-                <div>
-                  <p className="text-sm font-medium">{sale.Product_Name}</p>
-                  <p className="text-xs text-muted-foreground">{sale.Quantity_Sold} unit(s)</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-primary">{formatCurrency(sale.Total_Amount, currency)}</p>
-                  <p className="text-xs text-chart-2">+{formatCurrency(sale.Profit, currency)}</p>
-                </div>
-              </div>
-            ))
+            <motion.div
+              variants={{
+                hidden: {},
+                show: { transition: { staggerChildren: stagger.item } },
+              }}
+              initial="hidden"
+              animate="show"
+              className="space-y-2"
+            >
+              {filteredSales.slice(0, 10).map((sale, index) => (
+                <motion.div
+                  key={sale.Sale_ID}
+                  variants={{
+                    hidden: { opacity: 0, y: 8 },
+                    show: { opacity: 1, y: 0 },
+                  }}
+                  transition={{ type: "spring", stiffness: 200, damping: 24 }}
+                >
+                  <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5">
+                    <div>
+                      <p className="text-sm font-medium">{sale.Product_Name}</p>
+                      <p className="text-xs text-muted-foreground">{sale.Quantity_Sold} unit(s)</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-primary">{formatCurrency(sale.Total_Amount, currency)}</p>
+                      <p className="text-xs text-chart-2">+{formatCurrency(sale.Profit, currency)}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           )}
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   )
 }
 
-function SummaryCard({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; color: string }) {
+function SummaryCard({ icon: Icon, label, value, prefix, color }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; prefix?: string; color: string }) {
   return (
-    <Card className="border-border/50">
-      <CardContent className="py-4">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Icon className={`size-4 ${color}`} />
-          <span className="text-xs">{label}</span>
-        </div>
-        <p className={`mt-2 text-xl font-bold ${color}`}>{value}</p>
-      </CardContent>
-    </Card>
+    <AnimatedCard>
+      <Card className="border-border/50 bg-transparent">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Icon className={`size-4 ${color}`} />
+            <span className="text-xs">{label}</span>
+          </div>
+          <p className={`mt-2 text-xl font-bold ${color}`}>
+            <AnimatedCounter value={value} prefix={prefix} />
+          </p>
+        </CardContent>
+      </Card>
+    </AnimatedCard>
   )
 }

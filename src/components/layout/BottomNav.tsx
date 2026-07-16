@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import { NavLink } from "react-router-dom"
 import {
   LayoutDashboard,
@@ -8,16 +7,10 @@ import {
   Users,
   FileBarChart,
   Settings,
-  MoreHorizontal,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+import { motion } from "motion/react"
 
 type NavItem = {
   to: string
@@ -26,14 +19,14 @@ type NavItem = {
   end?: boolean
 }
 
-const primaryItems: NavItem[] = [
+export const primaryItems: NavItem[] = [
   { to: "/", label: "Home", icon: LayoutDashboard, end: true },
   { to: "/products", label: "Products", icon: Package },
   { to: "/sales", label: "Sales", icon: ShoppingCart },
   { to: "/reports", label: "Reports", icon: FileBarChart },
 ]
 
-const secondaryItems: NavItem[] = [
+export const secondaryItems: NavItem[] = [
   { to: "/expenses", label: "Expenses", icon: Receipt },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -48,7 +41,7 @@ function NavButton({ item }: { item: NavItem }) {
       end={item.end}
       className={({ isActive }) =>
         cn(
-          "flex min-w-[58px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition-all duration-200",
+          "relative flex min-w-[58px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition-all duration-200",
           isActive
             ? "bg-primary text-primary-foreground shadow-sm"
             : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -57,8 +50,21 @@ function NavButton({ item }: { item: NavItem }) {
     >
       {({ isActive }) => (
         <>
-          <Icon className={cn("size-[18px]", isActive && "scale-105")} strokeWidth={2.2} />
-          <span>{item.label}</span>
+          {isActive && (
+            <motion.div
+              layoutId="nav-indicator"
+              className="absolute inset-0 rounded-2xl bg-primary"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            />
+          )}
+          <motion.div
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className="relative z-10 flex flex-col items-center gap-1"
+          >
+            <Icon className={cn("size-[18px]", isActive && "scale-105")} strokeWidth={2.2} />
+          </motion.div>
+          <span className="relative z-10">{item.label}</span>
         </>
       )}
     </NavLink>
@@ -66,86 +72,13 @@ function NavButton({ item }: { item: NavItem }) {
 }
 
 export function BottomNav() {
-  const [open, setOpen] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  useEffect(() => {
-    const syncModalState = () => {
-      const hasOpenModal = document.body.querySelector('[data-state="open"], [role="dialog"]') !== null
-      setIsModalOpen(hasOpenModal)
-    }
-
-    syncModalState()
-
-    const observer = new MutationObserver(syncModalState)
-    observer.observe(document.body, {
-      attributes: true,
-      subtree: true,
-      attributeFilter: ["data-state", "aria-hidden", "style"],
-    })
-
-    window.addEventListener("resize", syncModalState)
-
-    return () => {
-      observer.disconnect()
-      window.removeEventListener("resize", syncModalState)
-    }
-  }, [])
-
-  const shouldHideFab = open || isModalOpen
-
   return (
-    <>
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-card/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-md items-center gap-2 rounded-[1.25rem] border border-border/60 bg-background/80 p-1.5">
-          {primaryItems.map((item) => (
-            <NavButton key={item.to} item={item} />
-          ))}
-        </div>
-      </nav>
-
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Open more navigation"
-        className={cn(
-          "fixed bottom-[5.4rem] right-4 z-[60] flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-[0_12px_30px_rgba(0,0,0,0.18)] transition-all duration-300 hover:scale-105",
-          shouldHideFab && "pointer-events-none translate-x-[160%] rotate-[-90deg] opacity-0"
-        )}
-      >
-        <MoreHorizontal className="size-6" strokeWidth={2.2} />
-      </button>
-
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl pb-safe">
-          <SheetHeader className="pb-2">
-            <SheetTitle>More</SheetTitle>
-          </SheetHeader>
-          <div className="grid grid-cols-3 gap-2 px-1 pb-2">
-            {secondaryItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex flex-col items-center gap-2 rounded-2xl border border-border/60 px-3 py-4 text-sm font-medium transition-colors",
-                      isActive
-                        ? "border-primary/40 bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )
-                  }
-                >
-                  <Icon className="size-5" strokeWidth={2.1} />
-                  <span>{item.label}</span>
-                </NavLink>
-              )
-            })}
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+    <nav className="fixed inset-x-0 bottom-0 z-50">
+      <div className="mx-auto flex max-w-md items-center gap-2 rounded-t-2xl bg-card/80 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl border-t border-border/70">
+        {primaryItems.map((item) => (
+          <NavButton key={item.to} item={item} />
+        ))}
+      </div>
+    </nav>
   )
 }
